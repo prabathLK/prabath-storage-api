@@ -24,11 +24,16 @@ app.use((req, res, next) => {
 
 setInterval(syncStatsToDB, 10000);
 
-// ==========================
-// 📊 PUBLIC DASHBOARD
-// ==========================
 app.get('/', async (req, res) => {
   const stats = await getFormattedStats();
+  
+  const formatNumber = (num) => {
+    return new Intl.NumberFormat('en-US', {
+      notation: "compact",
+      compactDisplay: "short",
+      maximumFractionDigits: 1
+    }).format(num);
+  };
   
   const html = `
   <!DOCTYPE html>
@@ -49,9 +54,10 @@ app.get('/', async (req, res) => {
       .card.purple { background: rgba(139, 92, 246, 0.1); } .card.purple::before { background: #8b5cf6; }
       .card.blue { background: rgba(59, 130, 246, 0.1); } .card.blue::before { background: #3b82f6; }
       .label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #a1a1aa; display: block; margin-bottom: 0.5rem; }
-      .value { font-size: 1.75rem; font-weight: 700; color: #fff; display: block; }
+      .value { font-size: 2rem; font-weight: 800; color: #fff; display: block; letter-spacing: -1px; }
       .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.1); }
-      .stat-mini { font-size: 0.875rem; color: #d4d4d8; } .stat-mini span { color: #71717a; font-size: 0.75rem; margin-right: 4px; }
+      .stat-mini { font-size: 0.9rem; color: #d4d4d8; font-weight: 500; } 
+      .stat-mini span { color: #71717a; font-size: 0.75rem; margin-right: 4px; font-weight: 400; }
       .footer { margin-top: 2rem; font-size: 0.75rem; color: #52525b; }
       @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
@@ -62,19 +68,19 @@ app.get('/', async (req, res) => {
       
       <div class="card purple">
         <span class="label">Total Lifetime Requests</span>
-        <span class="value">${stats.allTime.total.toLocaleString()}</span>
+        <span class="value">${formatNumber(stats.allTime.total)}</span>
         <div class="grid">
-          <div class="stat-mini"><span>GET</span> ${stats.allTime.get.toLocaleString()}</div>
-          <div class="stat-mini"><span>POST</span> ${stats.allTime.post.toLocaleString()}</div>
+          <div class="stat-mini"><span>GET</span> ${formatNumber(stats.allTime.get)}</div>
+          <div class="stat-mini"><span>POST</span> ${formatNumber(stats.allTime.post)}</div>
         </div>
       </div>
 
       <div class="card blue">
         <span class="label">Today's Traffic (${stats.today.date})</span>
-        <span class="value">${stats.today.total.toLocaleString()}</span>
+        <span class="value">${formatNumber(stats.today.total)}</span>
         <div class="grid">
-          <div class="stat-mini"><span>GET</span> ${stats.today.get.toLocaleString()}</div>
-          <div class="stat-mini"><span>POST</span> ${stats.today.post.toLocaleString()}</div>
+          <div class="stat-mini"><span>GET</span> ${formatNumber(stats.today.get)}</div>
+          <div class="stat-mini"><span>POST</span> ${formatNumber(stats.today.post)}</div>
         </div>
       </div>
 
@@ -88,10 +94,6 @@ app.get('/', async (req, res) => {
   `;
   res.send(html);
 });
-
-// ==========================
-// 📤 API ROUTES
-// ==========================
 
 app.post('/api/save', authMiddleware, async (req, res) => {
   try {
